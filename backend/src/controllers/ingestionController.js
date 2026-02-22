@@ -1,0 +1,126 @@
+import { getEmbeddings } from "../services/aiService.js";
+import { upsertEmbedding } from "../services/pineconeService.js";
+import DocumentMetadata from "../models/Document.js";
+import crypto from "crypto";
+
+// Basic text chunking function (splits by double newline or rough character count)
+const chunkText = (text, maxChars = 1000) => {
+  const chunks = [];
+  const paragraphs = text.split("\n\n");
+  let currentChunk = "";
+
+  for (const para of paragraphs) {
+    if (currentChunk.length + para.length > maxChars) {
+      if (currentChunk) chunks.push(currentChunk.trim());
+      currentChunk = para;
+    } else {
+      currentChunk += (currentChunk ? "\n\n" : "") + para;
+    }
+  }
+  if (currentChunk) chunks.push(currentChunk.trim());
+  return chunks;
+};
+
+// @desc    Ingest raw text into Knowledge Base
+// @route   POST /api/ingest/text
+// @access  Private
+export const ingestRawText = async (req, res) => {
+  try {
+    const {
+      title,
+      text,
+      type = "manual_text",
+      sourceUrl = "",
+      workspaceId,
+    } = req.body;
+
+    if (!title || !text || !workspaceId) {
+      return res
+        .status(400)
+        .json({ message: "Title, text, and workspaceId are required." });
+    }
+
+    // Step 1: Hash the content to prevent duplicate ingestion if content hasn't changed
+    const contentHash = crypto.createHash("sha256").update(text).digest("hex");
+
+    // Check if we already have this exact document
+    const existingDoc = await DocumentMetadata.findOne({
+      workspaceId,
+      title,
+      contentHash,
+    });
+    if (existingDoc) {
+      return res
+        .status(200)
+        .json({
+          message: "Document already exists and is up to date.",
+          document: existingDoc,
+        });
+    }
+
+    // Step 2: Chunk the text
+    const chunks = chunkText(text);
+    console.log(`Document split into ${chunks.length} chunks.`);
+
+    // Check if modifying an existing doc with same title/url
+    let docId;
+    const existingByTitle = await DocumentMetadata.findOne({
+      workspaceId,
+      title,
+    });
+
+    if (existingByTitle) {
+      docId = existingByTitle._id;
+      // We should ideally delete old vectors from pinecone here. For MVP, we will just overwrite similar chunk IDs.
+    } else {
+      const newDoc = await DocumentMetadata.create({
+        workspaceId,
+        type,
+        title,
+        sourceUrl,
+        contentHash,
+        chunkIds: [],
+      });
+      docId = newDoc._id;
+    }
+
+    // Step 3: Embed and Upsert chunks into Pinecone
+    const storedChunkIds = [];
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunkText = chunks[i];
+      const chunkId = `${docId}_chunk_${i}`;
+
+      // Get AI Embeddings
+      const vectorValues = await getEmbeddings(chunkText);
+
+      // Upsert to Pinecone
+      await upsertEmbedding(chunkId, vectorValues, {
+        workspaceId,
+        documentId: docId.toString(),
+        text: chunkText,
+        title: title,
+      });
+
+      storedChunkIds.push(chunkId);
+    }
+
+    // Step 4: Update Document Metadata in Mongo with the new hash and chunk IDs
+    await DocumentMetadata.findByIdAndUpdate(docId, {
+      contentHash,
+      chunkIds: storedChunkIds,
+      updatedAt: new Date(),
+    });
+
+    res.status(201).json({
+      message: "Document ingested successfully",
+      chunksProcessed: chunks.length,
+      documentId: docId,
+    });
+  } catch (error) {
+    console.error("Ingestion Error:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to ingest document", error: error.message });
+  }
+};
