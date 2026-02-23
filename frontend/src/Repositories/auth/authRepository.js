@@ -23,6 +23,18 @@ class AuthRepository {
     });
     return data;
   }
+
+  async forgotPassword(email) {
+    const { data } = await api.post("/auth/forgotpassword", { email });
+    return data;
+  }
+
+  async resetPassword(resetToken, password) {
+    const { data } = await api.put(`/auth/resetpassword/${resetToken}`, {
+      password,
+    });
+    return data;
+  }
 }
 
 export const authRepository = AuthRepository.getInstance();

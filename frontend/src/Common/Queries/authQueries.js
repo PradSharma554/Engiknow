@@ -14,3 +14,18 @@ export function useRegisterMutation(options = {}) {
     ...options,
   });
 }
+
+export function useForgotPasswordMutation(options = {}) {
+  return useMutation({
+    mutationFn: (email) => authRepository.forgotPassword(email),
+    ...options,
+  });
+}
+
+export function useResetPasswordMutation(options = {}) {
+  return useMutation({
+    mutationFn: ({ resetToken, password }) =>
+      authRepository.resetPassword(resetToken, password),
+    ...options,
+  });
+}

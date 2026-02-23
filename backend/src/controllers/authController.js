@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import User from "../models/User.js";
+import { sendEmail } from "../utils/mail.js";
 
 // Generate JWT
 const generateToken = (id) => {
@@ -86,6 +88,107 @@ export const loginUser = async (req, res) => {
 export const getMe = async (req, res) => {
   try {
     res.status(200).json(req.user);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Forgot Password
+// @route   POST /api/auth/forgotpassword
+// @access  Public
+export const forgotPassword = async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "There is no user with that email" });
+    }
+
+    const resetToken = crypto.randomBytes(20).toString("hex");
+
+    // Hash token and set to resetPasswordToken field
+    user.resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    await user.save();
+
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+
+    const message = `
+      <h1>You have requested a password reset</h1>
+      <p>Please go to this link to reset your password:</p>
+      <a href=${resetUrl} clicktracking=off>${resetUrl}</a>
+    `;
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "Password Reset Request",
+        text: message,
+      });
+
+      res.status(200).json({ success: true, message: "Email sent" });
+    } catch (err) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save();
+
+      return res.status(500).json({ message: "Email could not be sent" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Reset Password
+// @route   PUT /api/auth/resetpassword/:resettoken
+// @access  Public
+export const resetPassword = async (req, res) => {
+  try {
+    console.log("Reset Password Attempt! Param token:", req.params.resettoken);
+    // Get hashed token
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(req.params.resettoken)
+      .digest("hex");
+
+    console.log("Hashed version matching against DB:", resetPasswordToken);
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      console.log(
+        "User not found or token expired. User with this token count:",
+        await User.countDocuments({ resetPasswordToken }),
+      );
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    if (!req.body.password) {
+      return res.status(400).json({ message: "Please provide a new password" });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(req.body.password, salt);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+      token: generateToken(user._id),
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

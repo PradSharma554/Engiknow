@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { BrainCircuit, Mail, Lock, User, Loader2 } from "lucide-react";
 

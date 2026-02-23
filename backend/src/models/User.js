@@ -7,6 +7,8 @@ const UserSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ["admin", "member"], default: "member" },
     workspaces: [{ type: mongoose.Schema.Types.ObjectId, ref: "Workspace" }],
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
   },
   { timestamps: true },
 );
