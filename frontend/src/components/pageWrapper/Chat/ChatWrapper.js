@@ -1,3 +1,4 @@
+import ReactMarkdown from "react-markdown";
 import { Send, Bot, User as UserIcon, Loader2, Info } from "lucide-react";
 
 export default function ChatWrapper({
@@ -57,9 +58,15 @@ export default function ChatWrapper({
                       : "bg-slate-800/80 text-slate-100 border border-slate-700/50 rounded-tl-sm"
                 }`}
               >
-                <p className="whitespace-pre-wrap leading-relaxed">
-                  {msg.content}
-                </p>
+                <div
+                  className={`whitespace-pre-wrap leading-relaxed ${msg.role === "user" ? "" : "prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-headings:my-2"}`}
+                >
+                  {msg.role === "user" ? (
+                    msg.content
+                  ) : (
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  )}
+                </div>
               </div>
 
               {/* Sources */}
