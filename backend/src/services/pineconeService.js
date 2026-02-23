@@ -10,13 +10,15 @@ export const upsertEmbedding = async (id, values, metadata) => {
   try {
     const index = pinecone.index(indexName);
 
-    await index.upsert([
-      {
-        id,
-        values,
-        metadata,
-      },
-    ]);
+    await index.upsert({
+      records: [
+        {
+          id,
+          values,
+          metadata,
+        },
+      ],
+    });
 
     console.log(`Upserted vector ${id} successfully!`);
     return true;
