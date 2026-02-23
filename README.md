@@ -59,20 +59,20 @@ Think: “ChatGPT + Internal Wikipedia + Decision Memory + Auto-Documentation”
 
 ### Phase 1: Foundation (MVP)
 
-- [ ] Initialize Frontend project (Next.js, Tailwind, Shadcn UI)
-- [ ] Initialize Backend project (Express.js, Node.js)
-- [ ] Set up MongoDB connection (Mongoose/MongoDB Atlas Free Tier)
-- [ ] Implement User Authentication (JWT)
-- [ ] Set up Vector Database (Pinecone Free Tier)
-- [ ] Build a generic text-ingestion API and simple chat interface
+- [x] Initialize Frontend project (Next.js, Tailwind, Shadcn UI)
+- [x] Initialize Backend project (Express.js, Node.js)
+- [x] Set up MongoDB connection (Mongoose/MongoDB Atlas Free Tier)
+- [x] Implement User Authentication (JWT)
+- [x] Set up Vector Database (Pinecone Free Tier)
+- [x] Build a generic text-ingestion API and simple chat interface
 
 ### Phase 2: Core Engineering & AI
 
-- [ ] Create basic Chat UI on Frontend
-- [ ] Implement Vercel AI SDK / Langchain.js on Backend for Gemini/Groq integration
-- [ ] Build basic Document Ingestion API (text to embeddings)
-- [ ] Implement semantic search (Query to Vector DB)
-- [ ] Enhance Chat UI to display citations pointing to ingested sources
+- [x] Create basic Chat UI on Frontend
+- [x] Implement Vercel AI SDK / Langchain.js on Backend for Gemini/Groq integration
+- [x] Build basic Document Ingestion API (text to embeddings)
+- [x] Implement semantic search (Query to Vector DB)
+- [x] Enhance Chat UI to display citations pointing to ingested sources
 
 ### Phase 3: First Integrations
 
