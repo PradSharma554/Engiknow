@@ -73,6 +73,7 @@ Think: “ChatGPT + Internal Wikipedia + Decision Memory + Auto-Documentation”
 - [x] Build basic Document Ingestion API (text to embeddings)
 - [x] Implement semantic search (Query to Vector DB)
 - [x] Enhance Chat UI to display citations pointing to ingested sources
+- [ ] Build URL Scraper for Document Ingestion API (cheerio)
 
 ### Phase 3: First Integrations
 

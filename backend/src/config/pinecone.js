@@ -23,11 +23,11 @@ export const initPinecone = async () => {
 
     if (!indexExists) {
       console.log(
-        `Creating Pinecone index: ${indexName} (768 dimensions for Gemini Embeddings)...`,
+        `Creating Pinecone index: ${indexName} (3072 dimensions for Gemini Embeddings)...`,
       );
       await pinecone.createIndex({
         name: indexName,
-        dimension: 768, // Gemini text-embedding-004 has 768 dimensions
+        dimension: 3072, // gemini-embedding-001 has 3072 dimensions
         metric: "cosine",
         spec: {
           serverless: {

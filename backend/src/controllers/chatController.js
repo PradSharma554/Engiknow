@@ -26,8 +26,8 @@ export const askQuestion = async (req, res) => {
 
     if (similarChunks && similarChunks.length > 0) {
       similarChunks.forEach((match, idx) => {
-        // High scores (~0.7+) mean high relevance in cosine similarity
-        if (match.score > 0.6) {
+        // Lowered score threshold (~0.4+) to allow more forgiving semantic search in MVP
+        if (match.score > 0.4) {
           context += `[Source ${idx + 1}]: ${match.metadata.text}\n`;
           sources.push({
             score: match.score,

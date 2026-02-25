@@ -1,6 +1,7 @@
 import { getEmbeddings } from "../services/aiService.js";
 import { upsertEmbedding } from "../services/pineconeService.js";
 import DocumentMetadata from "../models/Document.js";
+import { extractTextFromHtml } from "../utils/htmlParser.js";
 import crypto from "crypto";
 
 // Basic text chunking function (splits by double newline or rough character count)
@@ -26,7 +27,7 @@ const chunkText = (text, maxChars = 1000) => {
 // @access  Private
 export const ingestRawText = async (req, res) => {
   try {
-    const {
+    let {
       title,
       text,
       type = "manual_text",
@@ -34,10 +35,39 @@ export const ingestRawText = async (req, res) => {
       workspaceId,
     } = req.body;
 
-    if (!title || !text || !workspaceId) {
+    if (!title || (!text && !sourceUrl) || !workspaceId) {
       return res
         .status(400)
-        .json({ message: "Title, text, and workspaceId are required." });
+        .json({
+          message:
+            "Title, workspaceId, and either text or source URL are required.",
+        });
+    }
+
+    // Try to fetch HTML content if sourceUrl is provided
+    if (sourceUrl) {
+      try {
+        const response = await fetch(sourceUrl);
+        const html = await response.text();
+        const scrapedText = extractTextFromHtml(html);
+        if (scrapedText) {
+          text = text ? `${text}\n\n${scrapedText}` : scrapedText;
+          type = "url_scraper";
+          console.log(
+            `Scraped ${scrapedText.length} characters from ${sourceUrl}`,
+          );
+        }
+      } catch (err) {
+        console.error("Failed to scrape URL:", err.message);
+        if (!text) {
+          return res
+            .status(400)
+            .json({
+              message:
+                "Failed to scrape content from provided URL and no raw text was provided.",
+            });
+        }
+      }
     }
 
     // Step 1: Hash the content to prevent duplicate ingestion if content hasn't changed
@@ -50,12 +80,10 @@ export const ingestRawText = async (req, res) => {
       contentHash,
     });
     if (existingDoc) {
-      return res
-        .status(200)
-        .json({
-          message: "Document already exists and is up to date.",
-          document: existingDoc,
-        });
+      return res.status(200).json({
+        message: "Document already exists and is up to date.",
+        document: existingDoc,
+      });
     }
 
     // Step 2: Chunk the text

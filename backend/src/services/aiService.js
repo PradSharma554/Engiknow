@@ -12,7 +12,7 @@ export const getEmbeddings = async (text) => {
     const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
     const result = await model.embedContent(text);
     const embedding = result.embedding;
-    return embedding.values.slice(0, 768); // Slice 3072 floats to 768 to match Pinecone Index
+    return embedding.values; // Returns an array of 3072 floats
   } catch (error) {
     console.error("Gemini Embedding Error:", error);
     throw new Error("Failed to generate embeddings.");

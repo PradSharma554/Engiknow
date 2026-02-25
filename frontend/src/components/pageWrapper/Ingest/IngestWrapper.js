@@ -65,10 +65,12 @@ export default function IngestWrapper({
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-300">
-            Raw Content *
+            {sourceUrl
+              ? "Raw Content (Optional if URL provided)"
+              : "Raw Content *"}
           </label>
           <textarea
-            required
+            required={!sourceUrl}
             rows={12}
             className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-lg px-4 py-3 text-slate-200 outline-none transition-all placeholder:text-slate-600 resize-y"
             placeholder="Paste your markdown, text, or documentation here..."
