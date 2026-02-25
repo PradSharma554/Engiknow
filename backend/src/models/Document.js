@@ -13,6 +13,7 @@ const DocumentMetadataSchema = new mongoose.Schema(
     sourceUrl: { type: String },
     authorId: { type: String },
     contentHash: { type: String, required: true },
+    content: { type: String },
     chunkIds: [{ type: String }],
   },
   { timestamps: true },

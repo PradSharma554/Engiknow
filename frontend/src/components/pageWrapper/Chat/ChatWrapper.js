@@ -1,5 +1,13 @@
 import ReactMarkdown from "react-markdown";
-import { Send, Bot, User as UserIcon, Loader2, Info } from "lucide-react";
+import {
+  Send,
+  Bot,
+  User as UserIcon,
+  Loader2,
+  Info,
+  PlusCircle,
+  MessageSquare,
+} from "lucide-react";
 
 export default function ChatWrapper({
   messages,
@@ -8,126 +16,168 @@ export default function ChatWrapper({
   handleSend,
   isLoading,
   messagesEndRef,
+  chats,
+  activeChatId,
+  setActiveChatId,
+  createNewChat,
 }) {
   return (
-    <div className="flex flex-col h-full bg-slate-950/50">
-      <div className="p-6 border-b border-slate-800/60 bg-slate-900/50 backdrop-blur top-0 z-10 sticky">
-        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
-          Omni-Search Interface
-        </h1>
-        <p className="text-sm text-slate-400">
-          Ask questions across all ingested company knowledge.
-        </p>
+    <div className="flex h-full bg-slate-950/50">
+      {/* Settings / History Sidebar */}
+      <div className="w-64 border-r border-slate-800/60 bg-slate-900/30 hidden md:flex flex-col">
+        <div className="p-4 border-b border-slate-800/60">
+          <button
+            onClick={createNewChat}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-lg transition-colors"
+          >
+            <PlusCircle className="w-5 h-5" />
+            New Chat
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          {chats && chats.length > 0 ? (
+            chats.map((chat) => (
+              <button
+                key={chat._id}
+                onClick={() => setActiveChatId(chat._id)}
+                className={`w-full text-left truncate px-3 py-3 rounded-xl flex items-center gap-3 transition-colors ${
+                  activeChatId === chat._id
+                    ? "bg-slate-800 text-blue-400"
+                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
+                }`}
+              >
+                <MessageSquare className="w-4 h-4 shrink-0" />
+                <span className="truncate text-sm">{chat.title}</span>
+              </button>
+            ))
+          ) : (
+            <p className="text-sm text-slate-500 text-center mt-4">
+              No recent chats
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`flex gap-4 max-w-4xl mx-auto ${
-              msg.role === "user" ? "flex-row-reverse" : ""
-            }`}
-          >
-            {/* Avatar */}
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                msg.role === "user"
-                  ? "bg-indigo-600"
-                  : "bg-slate-800 border border-slate-700"
-              }`}
-            >
-              {msg.role === "user" ? (
-                <UserIcon className="w-5 h-5 text-white" />
-              ) : (
-                <Bot className="w-5 h-5 text-blue-400" />
-              )}
-            </div>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="p-6 border-b border-slate-800/60 bg-slate-900/50 backdrop-blur top-0 z-10 sticky">
+          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
+            Omni-Search Interface
+          </h1>
+          <p className="text-sm text-slate-400">
+            Ask questions across all ingested company knowledge.
+          </p>
+        </div>
 
-            {/* Bubble */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {messages.map((msg, idx) => (
             <div
-              className={`flex flex-col gap-2 ${
-                msg.role === "user" ? "items-end" : "items-start"
+              key={idx}
+              className={`flex gap-4 max-w-4xl mx-auto ${
+                msg.role === "user" ? "flex-row-reverse" : ""
               }`}
             >
+              {/* Avatar */}
               <div
-                className={`px-5 py-3.5 rounded-2xl ${
+                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
                   msg.role === "user"
-                    ? "bg-blue-600 text-white rounded-tr-sm"
-                    : msg.isError
-                      ? "bg-red-950/50 text-red-200 border border-red-900/50 rounded-tl-sm"
-                      : "bg-slate-800/80 text-slate-100 border border-slate-700/50 rounded-tl-sm"
+                    ? "bg-indigo-600"
+                    : "bg-slate-800 border border-slate-700"
+                }`}
+              >
+                {msg.role === "user" ? (
+                  <UserIcon className="w-5 h-5 text-white" />
+                ) : (
+                  <Bot className="w-5 h-5 text-blue-400" />
+                )}
+              </div>
+
+              {/* Bubble */}
+              <div
+                className={`flex flex-col gap-2 ${
+                  msg.role === "user" ? "items-end" : "items-start"
                 }`}
               >
                 <div
-                  className={`whitespace-pre-wrap leading-relaxed ${msg.role === "user" ? "" : "prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-headings:my-2"}`}
+                  className={`px-5 py-3.5 rounded-2xl ${
+                    msg.role === "user"
+                      ? "bg-blue-600 text-white rounded-tr-sm"
+                      : msg.isError
+                        ? "bg-red-950/50 text-red-200 border border-red-900/50 rounded-tl-sm"
+                        : "bg-slate-800/80 text-slate-100 border border-slate-700/50 rounded-tl-sm"
+                  }`}
                 >
-                  {msg.role === "user" ? (
-                    msg.content
-                  ) : (
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  )}
-                </div>
-              </div>
-
-              {/* Sources */}
-              {msg.sources && msg.sources.length > 0 && (
-                <div className="mt-2 text-xs bg-slate-800/40 border border-slate-700/40 rounded-lg p-3 w-full max-w-xl">
-                  <div className="flex items-center gap-1.5 text-blue-400 mb-2 font-medium">
-                    <Info className="w-3.5 h-3.5" /> Sources Cited
+                  <div
+                    className={`whitespace-pre-wrap leading-relaxed ${msg.role === "user" ? "" : "prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-headings:my-2"}`}
+                  >
+                    {msg.role === "user" ? (
+                      msg.content
+                    ) : (
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    )}
                   </div>
-                  <ul className="space-y-2">
-                    {msg.sources.map((src, i) => (
-                      <li
-                        key={i}
-                        className="text-slate-400 border-l-2 border-slate-600 pl-2"
-                      >
-                        <span className="line-clamp-2">{src.sourceText}</span>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
 
-        {isLoading && (
-          <div className="flex gap-4 max-w-4xl mx-auto">
-            <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
-              <Bot className="w-5 h-5 text-blue-400 animate-pulse" />
+                {/* Sources */}
+                {msg.sources && msg.sources.length > 0 && (
+                  <div className="mt-2 text-xs bg-slate-800/40 border border-slate-700/40 rounded-lg p-3 w-full max-w-xl">
+                    <div className="flex items-center gap-1.5 text-blue-400 mb-2 font-medium">
+                      <Info className="w-3.5 h-3.5" /> Sources Cited
+                    </div>
+                    <ul className="space-y-2">
+                      {msg.sources.map((src, i) => (
+                        <li
+                          key={i}
+                          className="text-slate-400 border-l-2 border-slate-600 pl-2"
+                        >
+                          <span className="line-clamp-2">{src.sourceText}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="bg-slate-800/80 px-5 py-4 rounded-2xl rounded-tl-sm flex items-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-              <span className="text-slate-400 text-sm">
-                Searching knowledge base...
-              </span>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+          ))}
 
-      <div className="p-4 bg-slate-900/80 border-t border-slate-800 backdrop-blur sticky bottom-0">
-        <form
-          onSubmit={handleSend}
-          className="max-w-4xl mx-auto relative flex items-center"
-        >
-          <input
-            type="text"
-            className="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-4 pr-14 py-4 text-slate-100 placeholder:text-slate-500 outline-none transition-all shadow-inner"
-            placeholder="Ask anything about the company..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={isLoading}
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || isLoading}
-            className="absolute right-2 p-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg transition-colors flex items-center justify-center"
+          {isLoading && (
+            <div className="flex gap-4 max-w-4xl mx-auto">
+              <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
+                <Bot className="w-5 h-5 text-blue-400 animate-pulse" />
+              </div>
+              <div className="bg-slate-800/80 px-5 py-4 rounded-2xl rounded-tl-sm flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                <span className="text-slate-400 text-sm">
+                  Searching knowledge base...
+                </span>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="p-4 bg-slate-900/80 border-t border-slate-800 backdrop-blur sticky bottom-0">
+          <form
+            onSubmit={handleSend}
+            className="max-w-4xl mx-auto relative flex items-center"
           >
-            <Send className="w-5 h-5" />
-          </button>
-        </form>
+            <input
+              type="text"
+              className="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-4 pr-14 py-4 text-slate-100 placeholder:text-slate-500 outline-none transition-all shadow-inner"
+              placeholder="Ask anything about the company..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isLoading}
+              className="absolute right-2 p-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg transition-colors flex items-center justify-center"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

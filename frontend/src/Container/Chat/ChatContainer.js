@@ -2,11 +2,18 @@
 
 import { cloneElement, useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useChatAskMutation } from "@/Common/Queries/chatQueries";
+import {
+  useChatAskMutation,
+  useGetChats,
+  useGetChatById,
+} from "@/Common/Queries/chatQueries";
 import toast from "react-hot-toast";
 
 export default function ChatContainer({ children }) {
   const { user } = useAuth();
+
+  const [activeChatId, setActiveChatId] = useState(null);
+
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -18,8 +25,41 @@ export default function ChatContainer({ children }) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
 
+  const { data: chats = [], refetch: refetchChats } = useGetChats(user?._id, {
+    enabled: !!user?._id,
+  });
+
+  const { data: activeChatData, isFetching: isFetchingChat } = useGetChatById(
+    activeChatId,
+    {
+      enabled: !!activeChatId,
+    },
+  );
+
+  useEffect(() => {
+    if (activeChatData && activeChatData.messages) {
+      setMessages([
+        {
+          role: "assistant",
+          content:
+            "Hello! I am Engiknow, your enterprise AI brain. How can I help you today?",
+          sources: [],
+        },
+        ...activeChatData.messages.map((m) => ({
+          role: m.role === "ai" ? "assistant" : "user",
+          content: m.content,
+          sources: m.sources || [],
+        })),
+      ]);
+    }
+  }, [activeChatData]);
+
   const mutation = useChatAskMutation({
     onSuccess: (data) => {
+      if (!activeChatId && data.chatId) {
+        setActiveChatId(data.chatId);
+        refetchChats();
+      }
       setMessages((prev) => [
         ...prev,
         {
@@ -60,7 +100,20 @@ export default function ChatContainer({ children }) {
     mutation.mutate({
       question: userMessage,
       workspaceId: user._id, // Using user ID as workspace for MVP
+      chatId: activeChatId,
     });
+  };
+
+  const createNewChat = () => {
+    setActiveChatId(null);
+    setMessages([
+      {
+        role: "assistant",
+        content:
+          "Hello! I am Engiknow, your enterprise AI brain. How can I help you today?",
+        sources: [],
+      },
+    ]);
   };
 
   const methods = {
@@ -68,8 +121,12 @@ export default function ChatContainer({ children }) {
     input,
     setInput,
     handleSend,
-    isLoading: mutation.isPending,
+    isLoading: mutation.isPending || isFetchingChat,
     messagesEndRef,
+    chats,
+    activeChatId,
+    setActiveChatId,
+    createNewChat,
   };
 
   return cloneElement(children, { ...methods });

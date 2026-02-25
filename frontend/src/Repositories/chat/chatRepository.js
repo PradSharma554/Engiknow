@@ -10,8 +10,22 @@ class ChatRepository {
     return ChatRepository.instance;
   }
 
-  async askQuestion(question, workspaceId) {
-    const { data } = await api.post("/chat/ask", { question, workspaceId });
+  async askQuestion(question, workspaceId, chatId) {
+    const { data } = await api.post("/chat/ask", {
+      question,
+      workspaceId,
+      chatId,
+    });
+    return data;
+  }
+
+  async getChats(workspaceId) {
+    const { data } = await api.get(`/chat/${workspaceId}`);
+    return data;
+  }
+
+  async getChatById(chatId) {
+    const { data } = await api.get(`/chat/session/${chatId}`);
     return data;
   }
 }

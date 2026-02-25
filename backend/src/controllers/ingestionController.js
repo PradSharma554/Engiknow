@@ -36,12 +36,10 @@ export const ingestRawText = async (req, res) => {
     } = req.body;
 
     if (!title || (!text && !sourceUrl) || !workspaceId) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Title, workspaceId, and either text or source URL are required.",
-        });
+      return res.status(400).json({
+        message:
+          "Title, workspaceId, and either text or source URL are required.",
+      });
     }
 
     // Try to fetch HTML content if sourceUrl is provided
@@ -60,12 +58,10 @@ export const ingestRawText = async (req, res) => {
       } catch (err) {
         console.error("Failed to scrape URL:", err.message);
         if (!text) {
-          return res
-            .status(400)
-            .json({
-              message:
-                "Failed to scrape content from provided URL and no raw text was provided.",
-            });
+          return res.status(400).json({
+            message:
+              "Failed to scrape content from provided URL and no raw text was provided.",
+          });
         }
       }
     }
@@ -107,6 +103,7 @@ export const ingestRawText = async (req, res) => {
         title,
         sourceUrl,
         contentHash,
+        content: text,
         chunkIds: [],
       });
       docId = newDoc._id;
@@ -136,6 +133,7 @@ export const ingestRawText = async (req, res) => {
     // Step 4: Update Document Metadata in Mongo with the new hash and chunk IDs
     await DocumentMetadata.findByIdAndUpdate(docId, {
       contentHash,
+      content: text,
       chunkIds: storedChunkIds,
       updatedAt: new Date(),
     });
@@ -150,5 +148,45 @@ export const ingestRawText = async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to ingest document", error: error.message });
+  }
+};
+
+// @desc    Get all ingested documents for a workspace
+// @route   GET /api/ingest/:workspaceId
+// @access  Private
+export const getIngestions = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const documents = await DocumentMetadata.find({ workspaceId })
+      .select("-content")
+      .sort({ createdAt: -1 });
+    res.status(200).json(documents);
+  } catch (error) {
+    console.error("Fetch Ingestions Error:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch ingestions", error: error.message });
+  }
+};
+
+// @desc    Get details of a specific ingested document
+// @route   GET /api/ingest/detail/:documentId
+// @access  Private
+export const getIngestionById = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const document = await DocumentMetadata.findById(documentId);
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+    res.status(200).json(document);
+  } catch (error) {
+    console.error("Fetch Ingestion Detail Error:", error);
+    res
+      .status(500)
+      .json({
+        message: "Failed to fetch document details",
+        error: error.message,
+      });
   }
 };

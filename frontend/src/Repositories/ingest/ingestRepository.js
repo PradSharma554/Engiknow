@@ -20,6 +20,16 @@ class IngestRepository {
     });
     return data;
   }
+
+  async getIngestions(workspaceId) {
+    const { data } = await api.get(`/ingest/${workspaceId}`);
+    return data;
+  }
+
+  async getIngestionById(documentId) {
+    const { data } = await api.get(`/ingest/detail/${documentId}`);
+    return data;
+  }
 }
 
 export const ingestRepository = IngestRepository.getInstance();
