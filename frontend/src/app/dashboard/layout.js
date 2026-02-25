@@ -3,6 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import {
   BrainCircuit,
   MessageSquare,
@@ -22,7 +23,8 @@ export default function DashboardLayout({ children }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login");
+      toast.error("Unauthorised");
+      router.push("/");
     }
   }, [user, loading, router]);
 
